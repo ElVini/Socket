@@ -7,7 +7,7 @@
     tools:context=".MainActivity">
 
     <EditText
-        android:id="@+id/etUsuario"
+        android:id="@+id/etUsuarioConfig"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -39,7 +39,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:onClick="guardar"
+        android:onClick="guardarConfig"
         android:text="Guardar"
         android:textColor="@color/btnPrimary"
         app:backgroundTint="@color/transparent"
@@ -61,7 +61,7 @@
         app:layout_constraintGuide_percent=".20" />
 
     <EditText
-        android:id="@+id/etIp"
+        android:id="@+id/etIpConfig"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"

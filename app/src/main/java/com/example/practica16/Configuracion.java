@@ -3,46 +3,40 @@ package com.example.practica16;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.UserManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.util.List;
+public class Configuracion extends AppCompatActivity {
 
-public class MainActivity extends AppCompatActivity {
-    private EditText etUsuario, etIp;
+    private EditText etUsuarioConfig, etIpConfig;
     private String userName, direccion;
     private Bundle bundle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        etUsuario = (EditText) findViewById(R.id.etUsuario);
-        etIp = (EditText) findViewById(R.id.etIp);
+        setContentView(R.layout.activity_configuracion);
 
-        SharedPreferences preferences = getSharedPreferences("User", Context.MODE_PRIVATE);
-        userName = preferences.getString("nombreUsuario", "");
-        direccion = preferences.getString("direccion", "");
+        etUsuarioConfig = (EditText) findViewById(R.id.etUsuarioConfig);
+        etIpConfig = (EditText) findViewById(R.id.etIpConfig);
 
-        if(userName.length() > 0 && direccion.length() > 0) {
-            Intent intent = new Intent(this, Contactos.class);
-            intent.putExtra("nombreUsuario", userName);
-            intent.putExtra("direccion", direccion);
-            startActivity(intent);
-            finish();
-        }
+        bundle = getIntent().getExtras();
+
+        userName = bundle.getString("nombreUsuario");
+        direccion = bundle.getString("direccion");
+
+        etUsuarioConfig.setText(userName);
+        etIpConfig.setText(direccion);
     }
 
-    public void guardar(View v) {
+    public void guardarConfig(View v) {
         switch(v.getId()) {
             case R.id.btnGuardar:
-                userName = etUsuario.getText().toString();
-                direccion = etIp.getText().toString();
+                userName = etUsuarioConfig.getText().toString();
+                direccion = etIpConfig.getText().toString();
 
                 if(userName.length() == 0 && direccion.length() == 0) {
                     Toast.makeText(this, "Favor de rellenar todos los campos", Toast.LENGTH_SHORT).show();
@@ -50,8 +44,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 SharedPreferences preferences = getSharedPreferences("User", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = preferences.edit();
-                editor.putString("nombreUsuario", etUsuario.getText().toString());
-                editor.putString("direccion", etIp.getText().toString());
+                editor.putString("nombreUsuario", etUsuarioConfig.getText().toString());
+                editor.putString("direccion", etIpConfig.getText().toString());
                 editor.commit();
 
                 Intent intent = new Intent(this, Contactos.class);
