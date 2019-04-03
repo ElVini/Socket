@@ -77,11 +77,34 @@ public class Contactos extends AppCompatActivity {
 
         mSocket.on("myId", setSocketId);
 
-        mSocket.on("usersUpdated", getUsersConnected);
+        mSocket.on("usersConnected", getUsersConnected);
 
         mSocket.on("newMsg", handleNewMessage);
+    }
 
-        mSocket.on("disconnectedClient", handleDisconnection);
+    public void enviarMensaje(View v) {
+        switch(v.getId()) {
+            case R.id.btnEnviar:
+                if(etMensaje.getText().toString().length() == 0) {
+                    Toast.makeText(this, "Escribir un mensaje", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Mensaje mensaje = new Mensaje();
+                Gson gson = new Gson();
+                mensaje.mensaje = etMensaje.getText().toString();
+                mensaje.nombre = userName;
+                mensaje.clienteId = selectedSocket;
+
+                mSocket.emit("aTodos", gson.toJson(mensaje));
+                mensajes.add(mensaje);
+
+                messagesAdapter = new MessagesListAdapter(this, R.layout.lista_mensajes, mensajes);
+                lstMensajes.setAdapter(messagesAdapter);
+                etMensaje.setText("");
+
+                break;
+        }
     }
 
     @Override
@@ -107,28 +130,48 @@ public class Contactos extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private Emitter.Listener handleDisconnection = new Emitter.Listener() {
+    private Emitter.Listener setSocketId = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mySocketId = args[0].toString();
+                    Toast.makeText(Contactos.this, "El id es" + mySocketId, Toast.LENGTH_SHORT).show();
+                    Log.d("socket", mySocketId);
+
+                    Gson gson = new Gson();
+                    Usuario newUserConnected = new Usuario();
+                    newUserConnected.nombreUsuario = userName;
+                    newUserConnected.sessionId = mySocketId;
+
+                    mSocket.emit("newUserConnected", gson.toJson(newUserConnected));
+                }
+            });
+        }
+    };
+
+    private Emitter.Listener getUsersConnected = new Emitter.Listener() {
         @Override
         public void call(final Object... args) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     Gson gson = new Gson();
-                    JSONArray users = null;
+                    Usuario[] usersConnected;
+                    usersConnected = gson.fromJson(args[0].toString(), Usuario[].class);
                     usuarios.clear();
+
                     usuarios.add(new Usuario("Todos", "x"));
-                    try {
-                        users = new JSONArray(args[0].toString());
-                        for (int i = 0; i < users.length(); i++) {
-                            Usuario usuario = gson.fromJson(users.getJSONObject(i).toString(), Usuario.class);
-                            if(usuario.sessionId != mySocketId)
-                                usuarios.add(usuario);
-                        }
-                        listAdapter = new ContactsListAdapter(Contactos.this, R.layout.list_adapter, usuarios);
-                        spnUsuarios.setAdapter(listAdapter);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+
+                    for (int i = 0; i < usersConnected.length; i++) {
+                        Log.d("sessionId", usersConnected[i].sessionId);
+                        if(!usersConnected[i].sessionId.equals(mySocketId))
+                            usuarios.add(usersConnected[i]);
                     }
+
+                    ContactsListAdapter adapter = new ContactsListAdapter(Contactos.this, R.layout.list_adapter, usuarios);
+                    spnUsuarios.setAdapter(adapter);
                 }
             });
         }
@@ -143,8 +186,6 @@ public class Contactos extends AppCompatActivity {
                     Mensaje msg;
                     Gson gson = new Gson();
 
-                    Log.d("JSON", args[0].toString());
-
                     msg = gson.fromJson(args[0].toString(), Mensaje.class);
 
                     mensajes.add(msg);
@@ -152,101 +193,8 @@ public class Contactos extends AppCompatActivity {
                     messagesAdapter = new MessagesListAdapter(Contactos.this, R.layout.lista_mensajes, mensajes);
 
                     lstMensajes.setAdapter(messagesAdapter);
-
-                    etMensaje.setText("");
                 }
             });
         }
     };
-
-    private Emitter.Listener setSocketId = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mySocketId = args[0].toString();
-                    Log.d("Socket id", mySocketId);
-                    Gson gson = new Gson();
-                    Usuario user = new Usuario(userName, mySocketId);
-
-                    mSocket.emit("newUser", gson.toJson(user));
-                }
-            });
-        }
-    };
-
-    private Emitter.Listener getUsersConnected = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Log.d("Respuesta", args[0].toString());
-                    Gson gson = new Gson();
-                    JSONArray users = null;
-                    usuarios.clear();
-                    usuarios.add(new Usuario("Todos", "x"));
-                    try {
-                        users = new JSONArray(args[0].toString());
-                        Log.d("JSON_string", users.toString());
-                        for (int i = 0; i < users.length(); i++) {
-                            Log.d("JSON_user", users.getJSONObject(i).toString() + "Indice: " + i);
-                            Usuario usuario = gson.fromJson(users.getJSONObject(i).toString(), Usuario.class);
-                            if(usuario.sessionId != mySocketId)
-                                usuarios.add(usuario);
-                        }
-                        listAdapter = new ContactsListAdapter(Contactos.this, R.layout.list_adapter, usuarios);
-                        spnUsuarios.setAdapter(listAdapter);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
-    };
-
-    public void enviarMensaje(View view) {
-        switch (view.getId()) {
-            case R.id.btnEnviar:
-                Mensaje msg = new Mensaje();
-                msg.mensaje = etMensaje.getText().toString();
-
-                if(msg.mensaje.length() == 0) {
-                    Toast.makeText(this, "Escriba un mensaje", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                if(userSelected.equals("Todos")) {
-                    msg.nombre = "Todos";
-                    msg.clienteId = "null";
-
-                    mensajes.add(msg);
-
-                    messagesAdapter = new MessagesListAdapter(this, R.layout.lista_mensajes, mensajes);
-
-                    lstMensajes.setAdapter(messagesAdapter);
-
-                    Gson gson = new Gson();
-                    mSocket.emit("todos", gson.toJson(msg));
-                }
-                else {
-                    msg.nombre = userSelected;
-                    msg.clienteId = selectedSocket;
-
-                    mensajes.add(msg);
-
-                    messagesAdapter = new MessagesListAdapter(this, R.layout.lista_mensajes, mensajes);
-
-                    lstMensajes.setAdapter(messagesAdapter);
-
-                    Gson gson = new Gson();
-                    mSocket.emit("cliente", gson.toJson(msg));
-                }
-
-                etMensaje.setText("");
-                break;
-        }
-    }
-
 }

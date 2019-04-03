@@ -41,7 +41,7 @@ public class ContactsListAdapter extends ArrayAdapter<Usuario> {
         TextView txtUsuario = (TextView) convertView.findViewById(R.id.txtUserName);
         Usuario user = getItem(position);
 
-        txtUsuario.setText(user.sessionId);
+        txtUsuario.setText(user.nombreUsuario);
 
         return convertView;
     }
